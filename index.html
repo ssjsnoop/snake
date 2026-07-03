@@ -3,138 +3,234 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Snake</title>
+<title>Resume Builder</title>
 <style>
-  body {
-    margin: 0;
-    background: #111;
-    color: white;
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-  }
-  h1 { margin-bottom: 10px; }
-  canvas {
-    background: #222;
-    border: 2px solid #4a9d6f;
-  }
-  #score { margin-bottom: 10px; font-size: 18px; }
-  #restart {
-    margin-top: 15px;
-    padding: 10px 20px;
-    background: #4a9d6f;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    display: none;
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #f0f2f5; color: #222; }
+  header { background: #1a1a2e; color: white; padding: 20px; text-align: center; }
+  header h1 { margin: 0; font-size: 24px; }
+  .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .card h2 { margin-top: 0; font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 8px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0 4px; color: #444; }
+  input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; font-family: inherit; }
+  textarea { resize: vertical; min-height: 60px; }
+  .entry { border: 1px dashed #ccc; border-radius: 6px; padding: 12px; margin-bottom: 12px; position: relative; }
+  .entry button.remove { position: absolute; top: 8px; right: 8px; background: #e74c3c; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; }
+  .add-btn { background: #2d6cdf; color: white; border: none; padding: 8px 14px; border-radius: 5px; font-size: 13px; cursor: pointer; margin-top: 6px; }
+  .style-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+  .style-option { border: 2px solid #ddd; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; font-size: 13px; font-weight: 600; }
+  .style-option.selected { border-color: #2d6cdf; background: #eaf1ff; }
+  .swatch { height: 30px; border-radius: 4px; margin-bottom: 6px; }
+  .generate-btn { display: block; width: 100%; background: #1a1a2e; color: white; border: none; padding: 16px; font-size: 17px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+  .generate-btn:active { opacity: 0.85; }
+  #resumeOutput { display: none; }
+  .resume-page { background: white; padding: 40px; max-width: 800px; margin: 0 auto; }
+  .resume-page h1.name { margin: 0 0 4px; font-size: 30px; }
+  .resume-page .contact { font-size: 13px; color: #555; margin-bottom: 20px; }
+  .resume-page h2.section { font-size: 15px; text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 8px; padding-bottom: 4px; }
+  .resume-page .item { margin-bottom: 12px; }
+  .resume-page .item-title { font-weight: bold; font-size: 15px; }
+  .resume-page .item-sub { font-size: 13px; color: #555; font-style: italic; }
+  .resume-page .item-desc { font-size: 13px; margin-top: 4px; white-space: pre-line; }
+  .resume-page .skills-list { font-size: 13px; }
+  .style-classic .name { color: #1a1a2e; font-family: Georgia, serif; }
+  .style-classic .section { color: #1a1a2e; border-bottom: 2px solid #1a1a2e; }
+  .style-modern .name { color: #2d6cdf; }
+  .style-modern .section { color: #2d6cdf; border-bottom: 2px solid #2d6cdf; }
+  .style-modern .contact { color: #2d6cdf; }
+  .style-minimal .name { color: #222; font-weight: 300; font-size: 32px; letter-spacing: 2px; }
+  .style-minimal .section { color: #888; border-bottom: 1px solid #ccc; font-weight: normal; }
+  .style-bold .resume-page { padding: 0; }
+  .style-bold .header-block { background: #1a1a2e; color: white; padding: 30px 40px; }
+  .style-bold .header-block .name { color: white; margin: 0; }
+  .style-bold .header-block .contact { color: #ccc; margin: 4px 0 0; }
+  .style-bold .body-block { padding: 25px 40px; }
+  .style-bold .section { color: #1a1a2e; border-bottom: 2px solid #1a1a2e; }
+  .style-green .name { color: #1a1a1a; }
+  .style-green .section { color: #1e824c; border-bottom: 2px solid #1e824c; }
+  .style-green .item-title { color: #1e824c; }
+  @media print {
+    body * { visibility: hidden; }
+    #resumeOutput, #resumeOutput * { visibility: visible; }
+    #resumeOutput { display: block; position: absolute; top: 0; left: 0; width: 100%; }
+    .resume-page { box-shadow: none; margin: 0; padding: 20px 40px; }
   }
 </style>
 </head>
 <body>
-
-<h1>🐍 Snake</h1>
-<div id="score">Score: 0</div>
-<canvas id="game" width="320" height="320"></canvas>
-<button id="restart" onclick="startGame()">Play Again</button>
-
+<header>
+  <h1>📄 Resume Builder</h1>
+  <p style="margin:6px 0 0;font-size:13px;">Fill in your info, pick a style, download your resume</p>
+</header>
+<div class="container" id="formArea">
+  <div class="card">
+    <h2>Contact Info</h2>
+    <label>Full Name</label>
+    <input type="text" id="fullName" placeholder="Jane Doe">
+    <label>Job Title / Headline</label>
+    <input type="text" id="headline" placeholder="Marketing Specialist">
+    <label>Email</label>
+    <input type="text" id="email" placeholder="jane@email.com">
+    <label>Phone</label>
+    <input type="text" id="phone" placeholder="(555) 123-4567">
+    <label>Location</label>
+    <input type="text" id="location" placeholder="Portland, OR">
+  </div>
+  <div class="card">
+    <h2>Summary</h2>
+    <label>A few sentences about yourself</label>
+    <textarea id="summary" placeholder="Motivated professional with 5 years of experience in..."></textarea>
+  </div>
+  <div class="card">
+    <h2>Work Experience</h2>
+    <div id="experienceList"></div>
+    <button class="add-btn" onclick="addExperience()">+ Add Job</button>
+  </div>
+  <div class="card">
+    <h2>Education</h2>
+    <div id="educationList"></div>
+    <button class="add-btn" onclick="addEducation()">+ Add School</button>
+  </div>
+  <div class="card">
+    <h2>Skills</h2>
+    <label>Separate with commas</label>
+    <input type="text" id="skills" placeholder="Excel, Photoshop, Customer Service, Leadership">
+  </div>
+  <div class="card">
+    <h2>Choose a Style</h2>
+    <div class="style-picker" id="stylePicker"></div>
+  </div>
+  <button class="generate-btn" onclick="generateResume()">Generate & Download Resume</button>
+</div>
+<div id="resumeOutput"></div>
 <script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-const box = 16;
-let snake, direction, food, score, gameLoop;
-
-function startGame() {
-  snake = [{x: 8*box, y: 8*box}];
-  direction = 'RIGHT';
-  score = 0;
-  document.getElementById('score').innerText = 'Score: 0';
-  document.getElementById('restart').style.display = 'none';
-  placeFood();
-  if (gameLoop) clearInterval(gameLoop);
-  gameLoop = setInterval(draw, 120);
-}
-
-function placeFood() {
-  food = {
-    x: Math.floor(Math.random() * (canvas.width / box)) * box,
-    y: Math.floor(Math.random() * (canvas.height / box)) * box
+const styles = [
+  { id: 'classic', label: 'Classic', color: '#1a1a2e' },
+  { id: 'modern', label: 'Modern Blue', color: '#2d6cdf' },
+  { id: 'minimal', label: 'Minimal Gray', color: '#888888' },
+  { id: 'bold', label: 'Bold Dark', color: '#1a1a2e' },
+  { id: 'green', label: 'Green Accent', color: '#1e824c' }
+];
+let selectedStyle = 'classic';
+const picker = document.getElementById('stylePicker');
+styles.forEach(s => {
+  const div = document.createElement('div');
+  div.className = 'style-option' + (s.id === selectedStyle ? ' selected' : '');
+  div.id = 'opt-' + s.id;
+  div.innerHTML = `<div class="swatch" style="background:${s.color}"></div>${s.label}`;
+  div.onclick = () => {
+    selectedStyle = s.id;
+    document.querySelectorAll('.style-option').forEach(el => el.classList.remove('selected'));
+    div.classList.add('selected');
   };
+  picker.appendChild(div);
+});
+function addExperience() {
+  const list = document.getElementById('experienceList');
+  const div = document.createElement('div');
+  div.className = 'entry';
+  div.innerHTML = `
+    <button class="remove" onclick="this.parentElement.remove()">Remove</button>
+    <label>Job Title</label>
+    <input type="text" class="exp-title" placeholder="Sales Associate">
+    <label>Company & Dates</label>
+    <input type="text" class="exp-sub" placeholder="ABC Store — Jan 2020 to Present">
+    <label>Description</label>
+    <textarea class="exp-desc" placeholder="Handled customer inquiries, managed inventory..."></textarea>
+  `;
+  list.appendChild(div);
 }
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
-  else if (e.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
-  else if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
-  else if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
-});
-
-// simple swipe support for mobile
-let touchStartX = 0, touchStartY = 0;
-canvas.addEventListener('touchstart', e => {
-  touchStartX = e.touches[0].clientX;
-  touchStartY = e.touches[0].clientY;
-});
-canvas.addEventListener('touchend', e => {
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  const dy = e.changedTouches[0].clientY - touchStartY;
-  if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 0 && direction !== 'LEFT') direction = 'RIGHT';
-    else if (dx < 0 && direction !== 'RIGHT') direction = 'LEFT';
+function addEducation() {
+  const list = document.getElementById('educationList');
+  const div = document.createElement('div');
+  div.className = 'entry';
+  div.innerHTML = `
+    <button class="remove" onclick="this.parentElement.remove()">Remove</button>
+    <label>Degree / Program</label>
+    <input type="text" class="edu-title" placeholder="High School Diploma">
+    <label>School & Dates</label>
+    <input type="text" class="edu-sub" placeholder="Gresham High School — 2018">
+  `;
+  list.appendChild(div);
+}
+addExperience();
+addEducation();
+function generateResume() {
+  const fullName = document.getElementById('fullName').value || 'Your Name';
+  const headline = document.getElementById('headline').value;
+  const email = document.getElementById('email').value;
+  const phone = document.getElementById('phone').value;
+  const location = document.getElementById('location').value;
+  const summary = document.getElementById('summary').value;
+  const skills = document.getElementById('skills').value;
+  if (!document.getElementById('fullName').value) {
+    alert('Please enter your name first.');
+    return;
+  }
+  const contactBits = [email, phone, location].filter(Boolean).join('  |  ');
+  let expHTML = '';
+  document.querySelectorAll('#experienceList .entry').forEach(entry => {
+    const title = entry.querySelector('.exp-title').value;
+    const sub = entry.querySelector('.exp-sub').value;
+    const desc = entry.querySelector('.exp-desc').value;
+    if (title || sub || desc) {
+      expHTML += `<div class="item">
+        <div class="item-title">${escapeHTML(title)}</div>
+        <div class="item-sub">${escapeHTML(sub)}</div>
+        <div class="item-desc">${escapeHTML(desc)}</div>
+      </div>`;
+    }
+  });
+  let eduHTML = '';
+  document.querySelectorAll('#educationList .entry').forEach(entry => {
+    const title = entry.querySelector('.edu-title').value;
+    const sub = entry.querySelector('.edu-sub').value;
+    if (title || sub) {
+      eduHTML += `<div class="item">
+        <div class="item-title">${escapeHTML(title)}</div>
+        <div class="item-sub">${escapeHTML(sub)}</div>
+      </div>`;
+    }
+  });
+  const skillsHTML = skills ? `<div class="skills-list">${escapeHTML(skills)}</div>` : '';
+  let headerBlock, bodyOpen, bodyClose;
+  if (selectedStyle === 'bold') {
+    headerBlock = `<div class="header-block">
+        <h1 class="name">${escapeHTML(fullName)}</h1>
+        ${headline ? `<div class="contact">${escapeHTML(headline)}</div>` : ''}
+        <div class="contact">${escapeHTML(contactBits)}</div>
+      </div>`;
+    bodyOpen = `<div class="body-block">`;
+    bodyClose = `</div>`;
   } else {
-    if (dy > 0 && direction !== 'UP') direction = 'DOWN';
-    else if (dy < 0 && direction !== 'DOWN') direction = 'UP';
+    headerBlock = `
+      <h1 class="name">${escapeHTML(fullName)}</h1>
+      ${headline ? `<div class="contact" style="font-weight:600;">${escapeHTML(headline)}</div>` : ''}
+      <div class="contact">${escapeHTML(contactBits)}</div>
+    `;
+    bodyOpen = '';
+    bodyClose = '';
   }
-});
-
-function draw() {
-  ctx.fillStyle = '#222';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = '#e74c3c';
-  ctx.fillRect(food.x, food.y, box, box);
-
-  for (let i = 0; i < snake.length; i++) {
-    ctx.fillStyle = i === 0 ? '#4a9d6f' : '#7fc99a';
-    ctx.fillRect(snake[i].x, snake[i].y, box - 1, box - 1);
-  }
-
-  let head = {x: snake[0].x, y: snake[0].y};
-  if (direction === 'LEFT') head.x -= box;
-  if (direction === 'UP') head.y -= box;
-  if (direction === 'RIGHT') head.x += box;
-  if (direction === 'DOWN') head.y += box;
-
-  // wall collision
-  if (head.x < 0 || head.y < 0 || head.x >= canvas.width || head.y >= canvas.height) {
-    return gameOver();
-  }
-  // self collision
-  for (let i = 0; i < snake.length; i++) {
-    if (head.x === snake[i].x && head.y === snake[i].y) return gameOver();
-  }
-
-  if (head.x === food.x && head.y === food.y) {
-    score++;
-    document.getElementById('score').innerText = 'Score: ' + score;
-    placeFood();
-  } else {
-    snake.pop();
-  }
-
-  snake.unshift(head);
+  const resumeHTML = `
+    <div class="resume-page style-${selectedStyle}">
+      ${headerBlock}
+      ${bodyOpen}
+      ${summary ? `<h2 class="section">Summary</h2><div class="item-desc">${escapeHTML(summary)}</div>` : ''}
+      ${expHTML ? `<h2 class="section">Experience</h2>${expHTML}` : ''}
+      ${eduHTML ? `<h2 class="section">Education</h2>${eduHTML}` : ''}
+      ${skillsHTML ? `<h2 class="section">Skills</h2>${skillsHTML}` : ''}
+      ${bodyClose}
+    </div>
+  `;
+  document.getElementById('resumeOutput').innerHTML = resumeHTML;
+  setTimeout(() => window.print(), 100);
 }
-
-function gameOver() {
-  clearInterval(gameLoop);
-  document.getElementById('restart').style.display = 'inline-block';
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.innerText = str || '';
+  return div.innerHTML;
 }
-
-startGame();
 </script>
-
 </body>
 </html>
